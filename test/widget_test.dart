@@ -1,30 +1,42 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:cash_tracker/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('CashTrackerApp integration test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const CashTrackerApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Verify that the total amount is initially "0.00 €".
+    final totalAmountFinder = find.byWidgetPredicate(
+      (Widget widget) =>
+          widget is Text &&
+          widget.data == '0.00 €' &&
+          widget.style?.color == Colors.tealAccent,
+    );
+    expect(totalAmountFinder, findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    // Find the add button for the € 500 denomination.
+    final addButton = find.byIcon(Icons.add_circle_outline).first;
+
+    // Tap the add button for the € 500 denomination.
+    await tester.tap(addButton);
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify that the total amount is updated to "500.00 €".
+    final updatedTotalAmountFinder = find.byWidgetPredicate(
+      (Widget widget) =>
+          widget is Text &&
+          widget.data == '500.00 €' &&
+          widget.style?.color == Colors.tealAccent,
+    );
+    expect(updatedTotalAmountFinder, findsOneWidget);
+
+    // Tap the "Limpiar" button to clear all counts.
+    await tester.tap(find.text('Limpiar'));
+    await tester.pump();
+
+    // Verify that the total amount is "0.00 €" again.
+    expect(totalAmountFinder, findsOneWidget);
   });
 }

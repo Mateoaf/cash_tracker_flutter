@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const CashTrackerApp());
@@ -9,8 +13,11 @@ class CashTrackerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      
+      
       title: 'Cash Calculator',
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF0E1A2A),
@@ -19,7 +26,6 @@ class CashTrackerApp extends StatelessWidget {
       home: const CashTrackerHomePage(),
     );
   }
-
 }
 
 class CashTrackerHomePage extends StatefulWidget {
@@ -37,6 +43,26 @@ class _CashTrackerHomePageState extends State<CashTrackerHomePage> {
   void initState() {
     super.initState();
     counts = {for (var d in denominations) d: 0};
+    _loadData();
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String jsonString = jsonEncode(
+      counts.map((key, value) => MapEntry(key.toString(), value)),
+    );
+    await prefs.setString('counts', jsonString);
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('counts');
+    if (jsonString != null) {
+      final Map<String, dynamic> decodedMap = jsonDecode(jsonString);
+      setState(() {
+        counts = decodedMap.map((key, value) => MapEntry(int.parse(key), value));
+      });
+    }
   }
 
   int get totalBills => counts.values.fold(0, (a, b) => a + b);
@@ -47,6 +73,7 @@ class _CashTrackerHomePageState extends State<CashTrackerHomePage> {
     setState(() {
       counts.updateAll((key, value) => 0);
     });
+    _saveData();
   }
 
   @override
@@ -109,8 +136,11 @@ class _CashTrackerHomePageState extends State<CashTrackerHomePage> {
                               IconButton(
                                 onPressed: () {
                                   setState(() {
-                                    if (counts[value]! > 0) counts[value] = count - 1;
+                                    if (counts[value]! > 0) {
+                                      counts[value] = count - 1;
+                                    }
                                   });
+                                  _saveData();
                                 },
                                 icon: const Icon(Icons.remove_circle_outline),
                               ),
@@ -123,6 +153,7 @@ class _CashTrackerHomePageState extends State<CashTrackerHomePage> {
                                   setState(() {
                                     counts[value] = count + 1;
                                   });
+                                  _saveData();
                                 },
                                 icon: const Icon(Icons.add_circle_outline),
                               ),
