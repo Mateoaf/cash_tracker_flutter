@@ -1,9 +1,10 @@
 import 'dart:convert';
 
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'scan_page.dart';
 void main() {
   runApp(const CashTrackerApp());
 }
@@ -76,20 +77,31 @@ class _CashTrackerHomePageState extends State<CashTrackerHomePage> {
     _saveData();
   }
 
+  void _openScanner() async {
+    // Pausa la cámara si ya está abierta (buena práctica)
+
+    // Navega a la página de escaneo y ESPERA a que vuelva con un resultado
+    final int? detectedDenomination = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ScanPage()),
+    );
+
+    // Si el usuario escaneó algo (no solo pulsó "atrás")
+    if (detectedDenomination != null) {
+      // Comprueba si la denominación es válida
+      if (denominations.contains(detectedDenomination)) {
+        setState(() {
+          // Incrementa el contador para ese billete
+          counts[detectedDenomination] = counts[detectedDenomination]! + 1;
+        });
+        _saveData(); // Guarda los cambios
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Cash Calculator"),
-        backgroundColor: Colors.transparent,
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: clearAll,
-          ),
-        ],
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -217,6 +229,11 @@ class _CashTrackerHomePageState extends State<CashTrackerHomePage> {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+      onPressed: _openScanner, // ¡Añade esto!
+      backgroundColor: Colors.tealAccent,
+      child: const Icon(Icons.camera_alt, color: Colors.black),
+    ),
     );
   }
 }

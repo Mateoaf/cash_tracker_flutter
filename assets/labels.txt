@@ -1,0 +1,5 @@
+0 Fondo
+1 5 euros
+2 10 euros
+3 20 euros
+4 50 euros
